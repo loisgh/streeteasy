@@ -31,9 +31,9 @@ class ParseXML
       agent.average_sale_price = avg_sale_price(email.text)
       agent.response_time = agent.average_sale_price > 0 ? response_time(email.text) : 0
       agent.rating = get_rating(email.text)
-      @agents.push agent
+      @agents.push agent if agent.response_time > 0
     end
-    @agents
+    @agents.sort_by! { |a| [-a.rating, a.response_time, -a.average_sale_price] }
   end
 
   def avg_sale_price(email)

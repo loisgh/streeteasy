@@ -36,9 +36,9 @@ class ParseJson
       agent.average_sale_price = out[0]
       agent.response_time = out[1]
       agent.rating = fill_out_ratings(@ratings[idx])
-      @agents.push agent
+      @agents.push agent if agent.response_time > 0
     end
-    @agents
+    @agents.sort_by! { |a| [-a.rating, a.response_time, -a.average_sale_price] }
   end
 
   def get_average_sale_price_response_time(listings)
@@ -54,7 +54,8 @@ class ParseJson
       end
     end
     average_sale_price = average_sale_price/num_sales if num_sales > 0
-    out.push average_sale_price, average_response_time.sort.last
+    avg_resp = average_response_time.length > 0 ? average_response_time.sort.last : 0
+    out.push average_sale_price, avg_resp
   end
 
   def fill_out_ratings(ratings)
