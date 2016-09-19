@@ -32,22 +32,29 @@ class ParseJson
     @names.each_with_index do |name, idx|
       agent = Agent.new
       agent.name = name
-      agent.listings = fill_out_listings(@listings[idx])
-      agent.ratings = fill_out_ratings(@ratings[idx])
+      out = get_average_sale_price_response_time(@listings[idx])
+      agent.average_sale_price = out[0]
+      agent.response_time = out[1]
+      agent.rating = fill_out_ratings(@ratings[idx])
       @agents.push agent
     end
     @agents
   end
 
-  def fill_out_listings(listings)
-    listings_for_agent = Array.new
+  def get_average_sale_price_response_time(listings)
+    out = Array.new
+    average_sale_price = 0
+    num_sales = 0
+    average_response_time = Array.new
     listings.each do |listing|
       if listing["type"] == "sale"
-        listing_for_agent = Listing.new(listing["price"], listing["leads"]["average_response_time"])
-        listings_for_agent.push listing_for_agent
+        average_sale_price += listing["price"].to_i
+        num_sales += 1
+        average_response_time.push listing["leads"]["average_response_time"].to_i
       end
     end
-    listings_for_agent
+    average_sale_price = average_sale_price/num_sales if num_sales > 0
+    out.push average_sale_price, average_response_time.sort.last
   end
 
   def fill_out_ratings(ratings)
@@ -55,7 +62,7 @@ class ParseJson
     ratings.each do |rating|
       agent_ratings.push rating["rating"]
     end
-    agent_ratings
+    agent_ratings.sort.last
   end
 
 end

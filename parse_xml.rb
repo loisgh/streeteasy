@@ -1,5 +1,6 @@
 require_relative 'listing'
 require 'nokogiri'
+require 'active_support/all'
 require 'pp'
 
 class ParseXML
@@ -27,26 +28,25 @@ class ParseXML
     @agent_emails.each_with_index do |email, idx|
       agent = Agent.new
       agent.name = agent_names[idx].text
-      agent.listings = fill_out_listings(email.text)
-      agent.ratings = get_ratings(email)
+      agent.average_sale_price = avg_sale_price(email.text)
+      agent.response_time = agent.average_sale_price > 0 ? response_time(email.text) : 0
+      agent.rating = get_rating(email.text)
       @agents.push agent
     end
     @agents
   end
 
-  def fill_out_listings(email)
-    listings = Array.new
+  def avg_sale_price(email)
     price_array = @agent_xml.xpath("//element[email = '#{email}']//listings[type = 'sale']//price").map(&:text).map(&:to_f)
-    response_array = @agent_xml.xpath("//element[email = '#{email}']//listings[type = 'sale']//leads//averageResponseTime").map(&:text).map(&:to_i)
-    price_array.each_with_index do |price,idx|
-      listing = Listing.new(price, response_array[idx])
-      listings.push listing
-    end
-    listings
+    average__sale_price = price_array.length > 0 ? price_array.sum / price_array.length : 0
   end
 
-  def get_ratings(email)
-    @agent_xml.xpath("//element[email = '#{email}']/ratings//rating").map(&:text).map(&:to_i)
+  def response_time(email)
+    @agent_xml.xpath("//element[email = '#{email}']//listings[type = 'sale']//leads//averageResponseTime").map(&:text).map(&:to_i).sort.first
+  end
+
+  def get_rating(email)
+    @agent_xml.xpath("//element[email = '#{email}']/ratings//rating").map(&:text).map(&:to_i).sort.last
   end
 
 end
